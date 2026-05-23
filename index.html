@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Floor Planner Pro | Enterprise Architectural Suite</title>
+    <script src="three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS DESIGN SYSTEM 
+           Theme: Professional Bright / Studio Grey
+        */
+        :root {
+            --sidebar-width: 450px;
+            --primary: #4834d4;
+            --primary-light: #686de0;
+            --primary-soft: #eef0ff;
+            --bg: #f5f6fa;
+            --surface: #ffffff;
+            --text: #2f3542;
+            --text-muted: #747d8c;
+            --border: #dcdde1;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Inter', sans-serif; background: var(--bg); 
+            color: var(--text); overflow: hidden; display: flex; 
+        }
+
+        /* SIDEBAR ARCHITECTURE */
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.03);
+        }
+
+        .sidebar-header {
+            padding: 35px 30px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to bottom, #fff, #fdfdfd);
+        }
+
+        .sidebar-header h1 { 
+            margin: 0; font-size: 24px; font-weight: 800; color: var(--primary); 
+            letter-spacing: -1px; display: flex; align-items: center; gap: 10px;
+        }
+
+        .version-tag {
+            font-size: 10px; font-weight: 700; background: var(--bg);
+            padding: 4px 8px; border-radius: 4px; color: var(--text-muted);
+            text-transform: uppercase; margin-top: 5px; display: inline-block;
+        }
+
+        .scroll-container {
+            flex-grow: 1; padding: 25px; overflow-y: auto; 
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+
+        /* SECTION STYLING */
+        .section-box {
+            background: #fff; border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; margin-bottom: 25px;
+            transition: box-shadow 0.2s;
+        }
+        .section-box:hover { box-shadow: var(--shadow-sm); }
+
+        .label {
+            font-size: 11px; font-weight: 800; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: block;
+        }
+
+        /* GRID FOR ROOM PRESETS */
+        .room-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+        }
+
+        .btn-room {
+            background: var(--bg); border: 1px solid var(--border);
+            padding: 16px 10px; border-radius: 10px; cursor: pointer;
+            font-size: 13px; font-weight: 600; text-align: center;
+            transition: all 0.3s;
+        }
+        .btn-room:hover {
+            background: #fff; border-color: var(--primary);
+            color: var(--primary); transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 52, 212, 0.1);
+        }
+
+        /* CHAT SYSTEM */
+        #ai-console {
+            height: 360px; display: flex; flex-direction: column;
+            border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+            background: #fcfcfc;
+        }
+
+        #chat-log {
+            flex-grow: 1; padding: 15px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .bubble {
+            padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5;
+            max-width: 85%; position: relative;
+        }
+        .bubble-ai { background: var(--primary); color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .bubble-user { background: #e2e8f0; color: var(--text); align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        .quick-actions {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            padding: 10px 12px 0; background: #fff; border-top: 1px solid var(--border);
+        }
+
+        .quick-chip {
+            border: 1px solid var(--border); background: var(--primary-soft); color: var(--primary);
+            border-radius: 999px; padding: 7px 10px; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: background 0.15s, transform 0.15s, border-color 0.15s;
+        }
+        .quick-chip:hover { background: #fff; border-color: var(--primary); transform: translateY(-1px); }
+
+        .input-bar {
+            padding: 12px; background: #fff; border-top: 1px solid var(--border);
+            display: flex; gap: 8px;
+        }
+
+        #ai-input {
+            flex-grow: 1; border: 1px solid var(--border); border-radius: 6px;
+            padding: 10px 12px; outline: none; transition: border 0.2s, box-shadow 0.2s;
+            min-width: 0;
+        }
+        #ai-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(72, 52, 212, 0.12); }
+
+        .send-btn {
+            background: var(--primary); border: none; color: white; border-radius: 6px;
+            width: 56px; cursor: pointer; font-size: 12px; line-height: 1; font-weight: 800;
+            display: grid; place-items: center; transition: background 0.15s, transform 0.15s;
+        }
+        .send-btn:hover { background: var(--primary-light); transform: translateY(-1px); }
+        .send-btn:active { transform: translateY(0); }
+
+        /* VIEWPORT TOOLS */
+        #viewport { flex-grow: 1; position: relative; background: #e9ecef; }
+        #viewport canvas { display: block; cursor: grab; touch-action: none; }
+        #viewport canvas.is-hovering { cursor: pointer; }
+        #viewport canvas.is-dragging { cursor: grabbing; }
+        #viewport canvas.is-orbiting { cursor: move; }
+
+        #inspector {
+            position: absolute; top: 25px; right: 25px; width: 300px;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 25px; border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg); display: none; z-index: 500;
+        }
+
+        .hud-overlay {
+            position: absolute; bottom: 25px; left: 30px; 
+            background: var(--surface); padding: 12px 25px; border-radius: 50px;
+            border: 1px solid var(--border); display: flex; gap: 24px; flex-wrap: wrap;
+            font-size: 11px; font-weight: 700; box-shadow: var(--shadow-lg);
+            pointer-events: none; z-index: 500;
+        }
+
+        .hud-item span { color: var(--primary); margin-left: 5px; }
+
+        /* SLIDER */
+        input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; }
+
+        .btn-action {
+            width: 100%; padding: 14px; border-radius: 10px; border: none;
+            font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-light); }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="sidebar-header">
+        <h1>Floor Planner <span style="font-weight:300">Pro</span></h1>
+        <div class="version-tag">Build v16.0 Enterprise | 2026 Stable</div>
+    </div>
+
+    <div class="scroll-container">
+        <div class="section-box">
+            <span class="label">Daylight System (Time of Day)</span>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; font-weight:600;">
+                <span id="time-label">12:00 PM</span>
+                <span id="day-status" style="color:var(--success)">High Sun</span>
+            </div>
+            <input type="range" id="time-slider" min="0" max="23.9" step="0.1" value="12">
+        </div>
+
+        <div class="section-box">
+            <span class="label">Advanced Bedroom Variety (9+ Models)</span>
+            <div class="room-grid">
+                <div class="btn-room" onclick="core.loadPreset('Master')">Master Suite</div>
+                <div class="btn-room" onclick="core.loadPreset('Gaming')">Gaming Den</div>
+                <div class="btn-room" onclick="core.loadPreset('Office')">Executive Office</div>
+                <div class="btn-room" onclick="core.loadPreset('Minimal')">Zen Minimal</div>
+                <div class="btn-room" onclick="core.loadPreset('Guest')">Guest Quarters</div>
+                <div class="btn-room" onclick="core.loadPreset('Gym')">Fitness Studio</div>
+                <div class="btn-room" onclick="core.loadPreset('Kids')">Children's Room</div>
+                <div class="btn-room" onclick="core.loadPreset('Loft')">Industrial Loft</div>
+                <div class="btn-room" onclick="core.loadPreset('Royal')">Royal Chamber</div>
+            </div>
+        </div>
+
+        <span class="label">Architectural Intelligence</span>
+        <div id="ai-console">
+            <div id="chat-log">
+                <div class="bubble bubble-ai">Hello. I can place furniture, generate room presets, rotate selected items, or clear the plan.</div>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-chip" data-command="add king bed">King bed</button>
+                <button class="quick-chip" data-command="add sofa">Sofa</button>
+                <button class="quick-chip" data-command="add desk">Desk</button>
+                <button class="quick-chip" data-command="build gym layout">Gym layout</button>
+            </div>
+            <div class="input-bar">
+                <input type="text" id="ai-input" placeholder="Add sofa, rotate, build office, clear...">
+                <button class="send-btn" onclick="ai.handleRequest()" title="Send command" aria-label="Send command">Send</button>
+            </div>
+        </div>
+
+        <div style="margin-top:25px;">
+            <button class="btn-action btn-primary" onclick="core.toggleView()">TOGGLE BLUEPRINT MODE (B)</button>
+            <button onclick="core.resetAll()" style="width:100%; background:none; border:none; color:var(--danger); font-size:12px; font-weight:700; cursor:pointer; margin-top:15px;">CLEAR ALL DATA</button>
+        </div>
+    </div>
+</div>
+
+<div id="viewport">
+    <div class="hud-overlay">
+        <div class="hud-item">MODE: <span id="hud-mode">3D PERSPECTIVE</span></div>
+        <div class="hud-item">OBJECTS: <span id="hud-count">0</span></div>
+        <div class="hud-item">TIME: <span id="hud-time">12:00</span></div>
+        <div class="hud-item">DRAG: <span id="hud-drag">FREE</span></div>
+    </div>
+
+    <div id="inspector">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="obj-name" style="margin:0; font-size:18px;">Furniture Item</h3>
+            <span style="font-size:10px; color:var(--text-muted)">UUID: LOCKED</span>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--border); margin:15px 0;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-action" style="background:var(--bg); border:1px solid var(--border);" onclick="core.rotateSelected()">Rotate 45 deg (R)</button>
+            <button class="btn-action" style="background:var(--danger); color:white;" onclick="core.deleteSelected()">Remove Asset</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * ARCHITECTURAL ENGINE - CORE 
+ * This engine handles rendering, spatial math, and object grouping.
+ */
+
+class FloorPlannerEngine {
+    constructor() {
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0xf5f6fa);
+        this.scene.fog = new THREE.Fog(0xf5f6fa, 50, 250);
+
+        this.camera = new THREE.PerspectiveCamera(45, (window.innerWidth - 450) / window.innerHeight, 0.1, 1000);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        this.renderer.setSize(window.innerWidth - 450, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('viewport').appendChild(this.renderer.domElement);
+
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.furnitureItems = [];
+        this.activeObject = null;
+        this.is2D = false;
+        this.isDragging = false;
+        this.isOrbiting = false;
+        this.hoveredObject = null;
+        this.dragOffset = new THREE.Vector3();
+        this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+        this.orbitParams = { r: 70, phi: 1.1, theta: 0.5 };
+        this.lastMouse = { x: 0, y: 0 };
+
+        this.setupLights();
+        this.setupBase();
+        this.bindUserEvents();
+        this.loop();
+    }
+
+    setupLights() {
+        this.sun = new THREE.DirectionalLight(0xffffff, 1.2);
+        this.sun.position.set(50, 80, 20);
+        this.sun.castShadow = true;
+        this.sun.shadow.mapSize.width = 4096;
+        this.sun.shadow.mapSize.height = 4096;
+        this.sun.shadow.camera.left = -50;
+        this.sun.shadow.camera.right = 50;
+        this.sun.shadow.camera.top = 50;
+        this.sun.shadow.camera.bottom = -50;
+        this.scene.add(this.sun);
+
+        this.ambient = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(this.ambient);
+
+        // Fill Light
+        const fill = new THREE.PointLight(0x4834d4, 0.2);
+        fill.position.set(-30, 20, -30);
+        this.scene.add(fill);
+    }
+
+    updateSunCycle(val) {
+        const hour = parseFloat(val);
+        const h = Math.floor(hour);
+        const m = Math.floor((hour % 1) * 60);
+        const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        
+        document.getElementById('time-label').innerText = timeStr;
+        document.getElementById('hud-time').innerText = timeStr;
+
+        const angle = (hour / 24) * Math.PI * 2 - (Math.PI / 2);
+        this.sun.position.x = Math.cos(angle) * 100;
+        this.sun.position.y = Math.sin(angle) * 100;
+        this.sun.position.z = 30;
+
+        const isDay = hour > 6 && hour < 19;
+        this.sun.intensity = isDay ? 1.2 : 0.05;
+        this.ambient.intensity = isDay ? 0.7 : 0.2;
+        
+        const skyCol = isDay ? new THREE.Color(0xf5f6fa) : new THREE.Color(0x131417);
+        this.scene.background = skyCol;
+        this.scene.fog.color = skyCol;
+        document.getElementById('day-status').innerText = isDay ? "Daylight" : "Night Mode";
+        document.getElementById('day-status').style.color = isDay ? "var(--success)" : "var(--danger)";
+    }
+
+    setupBase() {
+        const grid = new THREE.GridHelper(200, 100, 0xdcdde1, 0xefefef);
+        this.scene.add(grid);
+
+        const plane = new THREE.Mesh(
+            new THREE.PlaneGeometry(200, 200),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 })
+        );
+        plane.rotation.x = -Math.PI / 2;
+        plane.receiveShadow = true;
+        this.scene.add(plane);
+
+        this.buildWalls('Rectangle');
+    }
+
+    buildWalls(style) {
+        if(this.walls) this.walls.forEach(w => this.scene.remove(w));
+        this.walls = [];
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        
+        const wall = (w, h, d, x, z, ry = 0) => {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+            m.position.set(x, h/2, z); m.rotation.y = ry;
+            m.castShadow = true; m.receiveShadow = true;
+            this.scene.add(m); this.walls.push(m);
+        };
+
+        if(style === 'Rectangle') {
+            wall(40, 4, 0.4, 0, 20); wall(40, 4, 0.4, 0, -20);
+            wall(0.4, 4, 40, 20, 0); wall(0.4, 4, 40, -20, 0);
+        } else if(style === 'L-Shape') {
+            wall(40, 4, 0.4, 0, 20); wall(0.4, 4, 40, -20, 0);
+            wall(20, 4, 0.4, 10, -20); wall(0.4, 4, 20, 20, -10);
+            wall(20, 4, 0.4, 10, 0); wall(0.4, 4, 20, 0, 10);
+        }
+    }
+
+    bindUserEvents() {
+        const canvas = this.renderer.domElement;
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        canvas.addEventListener('pointerdown', e => {
+            canvas.setPointerCapture(e.pointerId);
+            if(e.button === 2) {
+                this.isOrbiting = true;
+                this.setCanvasState('orbiting');
+            } else {
+                this.performSelection(e);
+            }
+            this.lastMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        canvas.addEventListener('pointerup', e => this.endPointerAction(e));
+        canvas.addEventListener('pointercancel', e => this.endPointerAction(e));
+
+        canvas.addEventListener('pointermove', e => {
+            if(this.isOrbiting) {
+                this.orbitParams.theta -= (e.clientX - this.lastMouse.x) * 0.01;
+                this.orbitParams.phi = Math.max(0.1, Math.min(Math.PI/2 - 0.1, this.orbitParams.phi - (e.clientY - this.lastMouse.y) * 0.01));
+            } else if(this.isDragging && this.activeObject) {
+                this.dragObject(e);
+            } else {
+                this.updateHover(e);
+            }
+            this.lastMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            this.orbitParams.r = Math.max(10, this.orbitParams.r + e.deltaY * 0.05);
+        }, { passive: false });
+
+        window.addEventListener('keydown', e => {
+            if(e.target.matches('input, textarea')) return;
+            if(e.key === 'r' || e.key === 'R') this.rotateSelected();
+            if(e.key === 'b' || e.key === 'B') this.toggleView();
+            if(e.key === 'Shift') this.setDragMode(true);
+        });
+
+        window.addEventListener('keyup', e => {
+            if(e.target.matches('input, textarea')) return;
+            if(e.key === 'Shift') this.setDragMode(false);
+        });
+
+        window.addEventListener('resize', () => this.resizeViewport());
+        document.getElementById('time-slider').addEventListener('input', (e) => this.updateSunCycle(e.target.value));
+    }
+
+    endPointerAction(e) {
+        if(this.renderer.domElement.hasPointerCapture(e.pointerId)) {
+            this.renderer.domElement.releasePointerCapture(e.pointerId);
+        }
+        this.isOrbiting = false;
+        this.isDragging = false;
+        this.setDragMode(false);
+        this.setCanvasState(this.hoveredObject ? 'hovering' : '');
+    }
+
+    setCanvasState(state) {
+        const canvas = this.renderer.domElement;
+        canvas.classList.toggle('is-hovering', state === 'hovering');
+        canvas.classList.toggle('is-dragging', state === 'dragging');
+        canvas.classList.toggle('is-orbiting', state === 'orbiting');
+    }
+
+    setDragMode(isSnapping) {
+        document.getElementById('hud-drag').innerText = isSnapping ? 'SNAP' : 'FREE';
+    }
+
+    resizeViewport() {
+        const viewport = document.getElementById('viewport');
+        const width = viewport.clientWidth;
+        const height = viewport.clientHeight;
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+    }
+
+    performSelection(e) {
+        this.updateMouseFromEvent(e);
+        const hits = this.raycaster.intersectObjects(this.furnitureItems, true);
+
+        if(hits.length > 0) {
+            const root = this.getFurnitureRoot(hits[0].object);
+            this.selectAsset(root);
+            const groundPoint = this.getGroundPoint();
+            if(groundPoint) this.dragOffset.copy(groundPoint).sub(root.position);
+            this.isDragging = true;
+            this.setCanvasState('dragging');
+        } else {
+            this.deselectAsset();
+        }
+    }
+
+    dragObject(e) {
+        this.updateMouseFromEvent(e);
+        const pt = this.getGroundPoint();
+        if(!pt) return;
+
+        const x = e.shiftKey ? Math.round(pt.x - this.dragOffset.x) : pt.x - this.dragOffset.x;
+        const z = e.shiftKey ? Math.round(pt.z - this.dragOffset.z) : pt.z - this.dragOffset.z;
+        this.activeObject.position.set(
+            THREE.MathUtils.clamp(x, -18.5, 18.5),
+            0,
+            THREE.MathUtils.clamp(z, -18.5, 18.5)
+        );
+        this.setDragMode(e.shiftKey);
+    }
+
+    updateHover(e) {
+        this.updateMouseFromEvent(e);
+        const hits = this.raycaster.intersectObjects(this.furnitureItems, true);
+        this.hoveredObject = hits.length > 0 ? this.getFurnitureRoot(hits[0].object) : null;
+        this.setCanvasState(this.hoveredObject ? 'hovering' : '');
+    }
+
+    updateMouseFromEvent(e) {
+        const r = this.renderer.domElement.getBoundingClientRect();
+        this.mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+        this.mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+    }
+
+    getGroundPoint() {
+        const pt = new THREE.Vector3();
+        return this.raycaster.ray.intersectPlane(this.dragPlane, pt) ? pt : null;
+    }
+
+    getFurnitureRoot(object) {
+        let root = object;
+        while(root.parent && root.parent.type !== 'Scene') root = root.parent;
+        return root;
+    }
+
+    selectAsset(obj) {
+        this.deselectAsset();
+        this.activeObject = obj;
+        obj.traverse(child => { if(child.isMesh && child.material.emissive) child.material.emissive.setHex(0x1a1a2e); });
+        document.getElementById('inspector').style.display = 'block';
+        document.getElementById('obj-name').innerText = obj.userData.type || "Object";
+    }
+
+    deselectAsset() {
+        if(this.activeObject) this.activeObject.traverse(child => { if(child.isMesh && child.material.emissive) child.material.emissive.setHex(0x000000); });
+        this.activeObject = null;
+        document.getElementById('inspector').style.display = 'none';
+    }
+
+    rotateSelected() { if(this.activeObject) this.activeObject.rotation.y += Math.PI / 4; }
+    deleteSelected() { 
+        if(this.activeObject) { 
+            this.scene.remove(this.activeObject); 
+            this.furnitureItems = this.furnitureItems.filter(i => i !== this.activeObject);
+            this.deselectAsset();
+            this.updateCounter();
+        } 
+    }
+
+    resetAll() {
+        this.furnitureItems.forEach(i => this.scene.remove(i));
+        this.furnitureItems = [];
+        this.deselectAsset();
+        this.updateCounter();
+    }
+
+    toggleView() {
+        this.is2D = !this.is2D;
+        document.getElementById('hud-mode').innerText = this.is2D ? "2D BLUEPRINT" : "3D PERSPECTIVE";
+    }
+
+    updateCounter() { document.getElementById('hud-count').innerText = this.furnitureItems.length; }
+
+    loadPreset(id) {
+        this.resetAll();
+        if(id === 'Master') {
+            factory.build('King Bed', 0, -8); factory.build('Wardrobe', -10, -10); factory.build('Nightstand', 4, -8); factory.spawnSet('Lounge', 8, 8);
+        } else if(id === 'Gaming') {
+            factory.build('Gaming Desk', -3, -6); factory.build('Gaming Chair', -3, -3); factory.build('Media Console', 7, -10); factory.build('Sofa', 3, 8);
+        } else if(id === 'Gym') {
+            factory.build('Treadmill', -5, -10); factory.build('Treadmill', 0, -10); factory.build('Weight Bench', 8, 0); factory.build('Storage Rack', -10, 8);
+        } else if(id === 'Office') {
+            factory.build('Executive Desk', 0, 0); factory.build('Office Chair', 0, 3); factory.build('Cabinet', -8, -12); factory.build('Bookshelf', 10, -12);
+        } else if(id === 'Minimal') {
+            factory.build('Platform Bed', -4, -6); factory.build('Low Table', 6, 4); factory.build('Wardrobe', -12, 0);
+        } else if(id === 'Guest') {
+            factory.build('Queen Bed', 0, -8); factory.build('Nightstand', 4, -8); factory.build('Dresser', -8, 8); factory.build('Chair', 8, 6);
+        } else if(id === 'Kids') {
+            factory.build('Twin Bed', -6, -8); factory.build('Study Desk', 6, -8); factory.build('Toy Storage', -10, 7); factory.build('Bookshelf', 10, 8);
+        } else if(id === 'Loft') {
+            factory.build('Sofa', -5, 6); factory.build('Coffee Table', -5, 2); factory.build('Industrial Desk', 8, -8); factory.build('Storage Rack', -11, -9);
+        } else if(id === 'Royal') {
+            factory.build('Royal Bed', 0, -8); factory.build('Dresser', -10, 6); factory.build('Lounge Chair', 8, 8); factory.build('Wardrobe', 12, -8);
+        } else {
+            factory.build('Standard Bed', 0, 0);
+        }
+    }
+
+    loop() {
+        requestAnimationFrame(() => this.loop());
+        if(this.is2D) {
+            this.camera.position.set(0, 120, 0);
+            this.camera.lookAt(0, 0, 0);
+        } else {
+            this.camera.position.x = this.orbitParams.r * Math.sin(this.orbitParams.phi) * Math.cos(this.orbitParams.theta);
+            this.camera.position.y = this.orbitParams.r * Math.cos(this.orbitParams.phi);
+            this.camera.position.z = this.orbitParams.r * Math.sin(this.orbitParams.phi) * Math.sin(this.orbitParams.theta);
+            this.camera.lookAt(0, 0, 0);
+        }
+        this.renderer.render(this.scene, this.camera);
+    }
+}
+
+/**
+ * GEOMETRY FACTORY - 90+ ITEM CAPABILITY
+ * Uses procedural assembly for complex grouped furniture.
+ */
+class GeometryFactory {
+    constructor(engine) { this.engine = engine; }
+
+    createPart(group, size, pos, color, metallic = 0) {
+        const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7, metalness: metallic });
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), mat);
+        mesh.position.set(pos[0], pos[1] + size[1]/2, pos[2]);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
+    }
+
+    build(name, x, z) {
+        const group = new THREE.Group();
+        group.userData.type = name;
+        const tag = name.toLowerCase();
+
+        // ANATOMY RULES
+        if(tag.includes('bed')) {
+            this.createPart(group, [2.5, 0.4, 3.8], [0, 0, 0], 0x7f8c8d); // Base
+            this.createPart(group, [2.3, 0.5, 3.6], [0, 0.4, 0.1], 0xffffff); // Mattress
+            this.createPart(group, [2.5, 1.8, 0.3], [0, 0.2, -1.8], 0x2d3436); // Headboard
+            this.createPart(group, [0.8, 0.2, 0.6], [0.6, 0.9, -1.4], 0xdfe6e9); // Pillow
+            this.createPart(group, [0.8, 0.2, 0.6], [-0.6, 0.9, -1.4], 0xdfe6e9);
+        } 
+        else if(tag.includes('desk') || tag.includes('table')) {
+            this.createPart(group, [3.5, 0.15, 2], [0, 1.1, 0], 0xcc8e35); // Top
+            const legs = [[-1.5, 0.8], [1.5, 0.8], [-1.5, -0.8], [1.5, -0.8]];
+            legs.forEach(lp => this.createPart(group, [0.15, 1.1, 0.15], [lp[0], 0, lp[1]], 0x2d3436, 0.5));
+        }
+        else if(tag.includes('sofa') || tag.includes('couch')) {
+            this.createPart(group, [4, 0.5, 1.8], [0, 0.2, 0], 0x4834d4); // Seat
+            this.createPart(group, [4, 1.4, 0.4], [0, 0.7, -0.7], 0x4834d4); // Back
+            this.createPart(group, [0.4, 0.8, 1.8], [1.8, 0.4, 0], 0x1e272e); // Arms
+            this.createPart(group, [0.4, 0.8, 1.8], [-1.8, 0.4, 0], 0x1e272e);
+        }
+        else if(tag.includes('chair')) {
+            this.createPart(group, [1.3, 0.25, 1.2], [0, 0.8, 0], 0x596275); // Seat
+            this.createPart(group, [1.3, 1.5, 0.25], [0, 0.85, -0.5], 0x596275); // Back
+            this.createPart(group, [0.16, 0.8, 0.16], [-0.5, 0, -0.4], 0x2d3436, 0.4);
+            this.createPart(group, [0.16, 0.8, 0.16], [0.5, 0, -0.4], 0x2d3436, 0.4);
+            this.createPart(group, [0.16, 0.8, 0.16], [-0.5, 0, 0.4], 0x2d3436, 0.4);
+            this.createPart(group, [0.16, 0.8, 0.16], [0.5, 0, 0.4], 0x2d3436, 0.4);
+        }
+        else if(tag.includes('wardrobe') || tag.includes('cabinet') || tag.includes('dresser') || tag.includes('bookshelf') || tag.includes('storage') || tag.includes('rack') || tag.includes('console') || tag.includes('nightstand')) {
+            const wide = tag.includes('dresser') || tag.includes('console');
+            const low = tag.includes('nightstand') || tag.includes('console');
+            const shelves = tag.includes('bookshelf') || tag.includes('rack');
+            const width = wide ? 3 : (tag.includes('nightstand') ? 1.2 : 2.2);
+            const height = low ? 1.1 : (shelves ? 3.2 : 2.8);
+            this.createPart(group, [width, height, 0.9], [0, 0, 0], shelves ? 0x8e8e93 : 0xbdc3c7);
+            this.createPart(group, [width * 0.9, 0.08, 0.96], [0, height * 0.35, 0], 0xf1f2f6);
+            if(!low) this.createPart(group, [width * 0.9, 0.08, 0.96], [0, height * 0.65, 0], 0xf1f2f6);
+            this.createPart(group, [0.12, 0.7, 0.08], [width * 0.35, height * 0.35, 0.5], 0x2c3e50, 0.8);
+        }
+        else if(tag.includes('bench')) {
+            this.createPart(group, [3.2, 0.3, 1.1], [0, 0.75, 0], 0x2d3436);
+            this.createPart(group, [0.18, 0.75, 0.18], [-1.2, 0, -0.35], 0x7f8c8d, 0.7);
+            this.createPart(group, [0.18, 0.75, 0.18], [1.2, 0, 0.35], 0x7f8c8d, 0.7);
+            this.createPart(group, [1.2, 1.6, 0.2], [1.4, 0.8, -0.35], 0x2d3436);
+        }
+        else if(tag.includes('treadmill')) {
+            this.createPart(group, [1.5, 0.2, 3.5], [0, 0, 0], 0x2d3436, 0.6); // Belt
+            this.createPart(group, [0.1, 1.8, 0.1], [0.6, 0.2, -1.5], 0x7f8c8d, 0.8); // Side
+            this.createPart(group, [0.1, 1.8, 0.1], [-0.6, 0.2, -1.5], 0x7f8c8d, 0.8);
+            this.createPart(group, [1.4, 0.4, 0.1], [0, 1.8, -1.5], 0x000000); // Screen
+        }
+        else {
+            // GENERIC PROCEDURAL STORAGE (For everything else)
+            this.createPart(group, [1.5, 2.8, 1], [0, 0, 0], 0xbdc3c7);
+            this.createPart(group, [0.1, 0.8, 0.1], [0.6, 1, 0.52], 0x2c3e50, 0.8); // Handle
+        }
+
+        group.position.set(x, 0, z);
+        this.engine.scene.add(group);
+        this.engine.furnitureItems.push(group);
+        this.engine.updateCounter();
+        this.engine.selectAsset(group);
+    }
+
+    spawnSet(type, x, z) {
+        if(type === 'Lounge') {
+            this.build('Sofa', x, z); this.build('Table', x, z-3);
+        }
+    }
+}
+
+/**
+ * AI INTERFACE - INTERPRETER
+ */
+class AIArchitect {
+    constructor(engine) {
+        this.engine = engine;
+        this.log = document.getElementById('chat-log');
+        this.input = document.getElementById('ai-input');
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        this.input.addEventListener('keydown', e => {
+            if(e.key === 'Enter') this.handleRequest();
+        });
+
+        document.querySelectorAll('.quick-chip').forEach(button => {
+            button.addEventListener('click', () => {
+                this.input.value = button.dataset.command;
+                this.handleRequest();
+            });
+        });
+    }
+
+    handleRequest() {
+        const text = this.input.value.trim();
+        if(!text) return;
+
+        this.addMsg(text, 'user');
+        this.input.value = '';
+
+        setTimeout(() => {
+            this.runCommand(text);
+        }, 150);
+    }
+
+    runCommand(text) {
+        const cmd = text.toLowerCase();
+        const presets = {
+            master: 'Master',
+            gaming: 'Gaming',
+            office: 'Office',
+            minimal: 'Minimal',
+            guest: 'Guest',
+            gym: 'Gym',
+            fitness: 'Gym',
+            kids: 'Kids',
+            children: 'Kids',
+            loft: 'Loft',
+            royal: 'Royal'
+        };
+
+        if(cmd.includes('clear') || cmd.includes('reset')) {
+            this.engine.resetAll();
+            this.addMsg('Plan cleared.', 'ai');
+            return;
+        }
+
+        if(cmd.includes('delete') || cmd.includes('remove')) {
+            this.engine.deleteSelected();
+            this.addMsg('Selected item removed.', 'ai');
+            return;
+        }
+
+        if(cmd.includes('rotate')) {
+            this.engine.rotateSelected();
+            this.addMsg('Selected item rotated 45 degrees.', 'ai');
+            return;
+        }
+
+        const presetKey = Object.keys(presets).find(key => cmd.includes(key));
+        if((cmd.includes('layout') || cmd.includes('room') || cmd.includes('build')) && presetKey) {
+            this.engine.loadPreset(presets[presetKey]);
+            this.addMsg(`${presets[presetKey]} layout generated. Drag any item with the mouse to refine it.`, 'ai');
+            return;
+        }
+
+        const item = this.resolveFurnitureName(cmd, text);
+        const pos = this.nextSpawnPosition();
+        factory.build(item, pos.x, pos.z);
+        this.addMsg(`${item} added. Drag it freely, or hold Shift while dragging to snap to the grid.`, 'ai');
+    }
+
+    resolveFurnitureName(cmd, original) {
+        const furniture = [
+            ['king', 'King Bed'],
+            ['queen', 'Queen Bed'],
+            ['twin', 'Twin Bed'],
+            ['bed', 'Standard Bed'],
+            ['sofa', 'Sofa'],
+            ['couch', 'Sofa'],
+            ['coffee table', 'Coffee Table'],
+            ['table', 'Table'],
+            ['gaming chair', 'Gaming Chair'],
+            ['office chair', 'Office Chair'],
+            ['chair', 'Chair'],
+            ['desk', 'Office Desk'],
+            ['wardrobe', 'Wardrobe'],
+            ['cabinet', 'Cabinet'],
+            ['dresser', 'Dresser'],
+            ['bookshelf', 'Bookshelf'],
+            ['shelf', 'Bookshelf'],
+            ['storage', 'Storage Rack'],
+            ['rack', 'Storage Rack'],
+            ['console', 'Media Console'],
+            ['nightstand', 'Nightstand'],
+            ['bench', 'Weight Bench'],
+            ['treadmill', 'Treadmill']
+        ];
+        const match = furniture.find(([key]) => cmd.includes(key));
+        if(match) return match[1];
+
+        return original
+            .replace(/^(add|place|make|create|build)\s+/i, '')
+            .trim() || 'Furniture Item';
+    }
+
+    nextSpawnPosition() {
+        const index = this.engine.furnitureItems.length;
+        const radius = 4 + Math.floor(index / 6) * 3;
+        const angle = index * 1.15;
+        return {
+            x: THREE.MathUtils.clamp(Math.cos(angle) * radius, -14, 14),
+            z: THREE.MathUtils.clamp(Math.sin(angle) * radius, -14, 14)
+        };
+    }
+
+    addMsg(txt, who) {
+        const d = document.createElement('div');
+        d.className = `bubble bubble-${who}`;
+        d.innerText = txt;
+        this.log.appendChild(d);
+        this.log.scrollTop = this.log.scrollHeight;
+    }
+}
+
+// INITIALIZE SYSTEM
+const core = new FloorPlannerEngine();
+const factory = new GeometryFactory(core);
+const ai = new AIArchitect(core);
+
+</script>
+</body>
+</html>
